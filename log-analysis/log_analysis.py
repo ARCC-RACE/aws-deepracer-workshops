@@ -44,7 +44,7 @@ def calc_speed(timestamp, curr_position, prev_timestamp, prev_position):
     prev_x, prev_y = prev_position
     distance_travelled = (((prev_x - curr_x) ** 2) + ((prev_y - curr_y) ** 2)) ** .5
     
-    return distance_travelled / float(time_diff)
+    return (distance_travelled / float(time_diff)) / 100
 
 def convert_to_pandas(data, episodes_per_iteration=20):
     """
