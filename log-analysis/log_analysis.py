@@ -279,16 +279,17 @@ def plot_grid_world(episode_df, inner, outer, graphed_value='throttle', min_prog
     
     lap_time = np.ptp(episode_df['timestamp'].astype(float))
     average_velocity = np.nanmean(episode_df['velocity'])
+    max_velocity = np.max(episode_df['velocity'])
     average_throttle = np.nanmean(episode_df['throttle'])
     progress = np.nanmax(episode_df['progress'])
     distance = average_velocity * lap_time
 
     if not min_progress or progress > min_progress:
 
-        distance_lap_time = 'Distance, progress, lap time = %.2f (meters), %.2f %%, %.2f (sec)' % (
+        distance_lap_time = 'Distance = %.2f (meters), progress = %.2f %%, lap time = %.2f (sec)' % (
             distance, progress, lap_time)
-        throttle_velocity = 'Average throttle, velocity = %.2f (Gazebo), %.2f (meters/sec)' % (
-            average_throttle, average_velocity)
+        throttle_velocity = 'Average throttle = %.2f (Gazebo), Average velocity = %.2f (meters/sec), Maximum velocity = %.2f (meters/sec)' % (
+            average_throttle, average_velocity, max_velocity)
 
         fig = None
         if ax is None:
