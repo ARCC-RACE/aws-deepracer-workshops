@@ -15,8 +15,6 @@ OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-import math
-
 from datetime import datetime
 from decimal import *
 
@@ -44,9 +42,9 @@ def calc_speed(timestamp, curr_position, prev_timestamp, prev_position):
     time_diff = timestamp - prev_timestamp
     curr_x, curr_y = curr_position
     prev_x, prev_y = prev_position
-    distance_travelled = math.sqrt(((prev_x - curr_x) ** 2) + ((prev_y - curr_y) ** 2)) / 100
+    distance_travelled = (((prev_x - curr_x) ** 2) + ((prev_y - curr_y) ** 2)) ** .5
     
-    return (float(distance_travelled) / float(time_diff))
+    return distance_travelled / float(time_diff)
 
 def convert_to_pandas(data, episodes_per_iteration=20):
     """
