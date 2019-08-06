@@ -327,7 +327,8 @@ def simulation_agg(panda, firstgroup='iteration', add_timestamp=False, is_eval=F
         .rename(index=str, columns={"closest_waypoint": "start_at"})
     by_progress = grouped['progress'].agg(np.max).reset_index()
     by_throttle = grouped['throttle'].agg(np.mean).reset_index()
-    by_velocity = grouped['velocity'].agg(np.mean).reset_index()
+    by_velocity = grouped['velocity'].agg(np.mean).reset_index().rename(columns={'velocity': 'mean_velocity'})
+    by_max_velocity = grouped['velocity'].agg(np.max).reset_index().rename(columns={'velocity': 'max_velocity'})
     by_time = grouped['timestamp'].agg(np.ptp).reset_index() \
         .rename(index=str, columns={"timestamp": "time"})
     by_time['time'] = by_time['time'].astype(float)
@@ -344,7 +345,7 @@ def simulation_agg(panda, firstgroup='iteration', add_timestamp=False, is_eval=F
         by_new_reward = grouped['new_reward'].agg(np.sum).reset_index()
         result = result.merge(by_new_reward, on=[firstgroup, 'episode'])
 
-    result = result.merge(by_throttle, on=[firstgroup, 'episode']).merge(by_velocity, on=[firstgroup, 'episode'])
+    result = result.merge(by_throttle, on=[firstgroup, 'episode']).merge(by_velocity, on=[firstgroup, 'episode']).merge(by_max_velocity, on=[firstgroup, 'episode'])
 
     if not is_eval:
         by_reward = grouped['reward'].agg(np.sum).reset_index()
