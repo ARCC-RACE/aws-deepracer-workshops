@@ -46,7 +46,7 @@ deactivate () {
 # unset irrelevant variables
 deactivate nondestructive
 
-VIRTUAL_ENV="/home/michael/github/ARCC-RACE/deepracer-for-dummies/aws-deepracer-workshops/log-analysis/log-analysis.venv"
+VIRTUAL_ENV="/media/michael/BigMemory/deepracer-for-dummies/aws-deepracer-workshops/log-analysis/log-analysis.venv"
 export VIRTUAL_ENV
 
 _OLD_VIRTUAL_PATH="$PATH"

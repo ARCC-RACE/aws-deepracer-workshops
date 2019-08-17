@@ -57,7 +57,7 @@ end
 # Unset irrelevant variables.
 deactivate nondestructive
 
-set -gx VIRTUAL_ENV "/home/michael/github/ARCC-RACE/deepracer-for-dummies/aws-deepracer-workshops/log-analysis/log-analysis.venv"
+set -gx VIRTUAL_ENV "/media/michael/BigMemory/deepracer-for-dummies/aws-deepracer-workshops/log-analysis/log-analysis.venv"
 
 # https://github.com/fish-shell/fish-shell/issues/436 altered PATH handling
 if test (echo $FISH_VERSION | tr "." "\n")[1] -lt 3
