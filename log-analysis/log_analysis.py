@@ -38,6 +38,13 @@ def load_data(fname):
                 data.append(",".join(parts))
     return data
 
+def calc_velocity(timestamp, curr_position, prev_timestamp, prev_position):
+    time_diff = timestamp - prev_timestamp
+    curr_x, curr_y = curr_position
+    prev_x, prev_y = prev_position
+    distance_travelled = (((prev_x - curr_x) ** 2) + ((prev_y - curr_y) ** 2)) ** .5
+    
+    return (distance_travelled / float(time_diff)) / 100
 
 def convert_to_pandas(data, episodes_per_iteration=20):
     """
@@ -58,6 +65,10 @@ def convert_to_pandas(data, episodes_per_iteration=20):
 
     df_list = list()
 
+    prev_episode = None
+    prev_timestamp = None
+    prev_position = (0, 0)
+    
     # ignore the first two dummy values that coach throws at the start.
     for d in data[2:]:
         parts = d.rstrip().split(",")
@@ -76,15 +87,25 @@ def convert_to_pandas(data, episodes_per_iteration=20):
         closest_waypoint = int(parts[12])
         track_len = float(parts[13])
         tstamp = Decimal(parts[14])
+        curr_position = (x, y)
+        
+        if prev_episode != episode:
+            velocity = 0
+        else:
+            velocity = calc_velocity(tstamp, curr_position, prev_timestamp, prev_position)
+            
+        prev_timestamp = tstamp
+        prev_position = curr_position
+        prev_episode = episode
 
         iteration = int(episode / episodes_per_iteration) + 1
         df_list.append((iteration, episode, steps, x, y, yaw, steer, throttle,
                         action, reward, done, all_wheels_on_track, progress,
-                        closest_waypoint, track_len, tstamp))
+                        closest_waypoint, track_len, tstamp, velocity))
 
     header = ['iteration', 'episode', 'steps', 'x', 'y', 'yaw', 'steer',
               'throttle', 'action', 'reward', 'done', 'on_track', 'progress',
-              'closest_waypoint', 'track_len', 'timestamp']
+              'closest_waypoint', 'track_len', 'timestamp', 'velocity']
 
     df = pd.DataFrame(df_list, columns=header)
     return df
@@ -255,22 +276,20 @@ def plot_grid_world(episode_df, inner, outer, graphed_value='throttle', min_prog
     """
     plot a scaled version of lap, along with throttle taken a each position
     """
-
-    episode_df.loc[:, 'distance_diff'] = ((episode_df['x'].shift(1) - episode_df['x']) ** 2 + (
-            episode_df['y'].shift(1) - episode_df['y']) ** 2) ** 0.5
-
-    distance = np.nansum(episode_df['distance_diff']) / 100
+    
     lap_time = np.ptp(episode_df['timestamp'].astype(float))
-    velocity = distance / lap_time
+    average_velocity = np.nanmean(episode_df['velocity'])
+    max_velocity = np.max(episode_df['velocity'])
     average_throttle = np.nanmean(episode_df['throttle'])
     progress = np.nanmax(episode_df['progress'])
+    distance = average_velocity * lap_time
 
     if not min_progress or progress > min_progress:
 
-        distance_lap_time = 'Distance, progress, lap time = %.2f (meters), %.2f %%, %.2f (sec)' % (
+        distance_lap_time = 'Distance = %.2f (meters), progress = %.2f %%, lap time = %.2f (sec)' % (
             distance, progress, lap_time)
-        throttle_velocity = 'Average throttle, velocity = %.2f (Gazebo), %.2f (meters/sec)' % (
-            average_throttle, velocity)
+        throttle_velocity = 'Average throttle = %.2f (Gazebo), Average velocity = %.2f (meters/sec), Maximum velocity = %.2f (meters/sec)' % (
+            average_throttle, average_velocity, max_velocity)
 
         fig = None
         if ax is None:
@@ -309,6 +328,8 @@ def simulation_agg(panda, firstgroup='iteration', add_timestamp=False, is_eval=F
         .rename(index=str, columns={"closest_waypoint": "start_at"})
     by_progress = grouped['progress'].agg(np.max).reset_index()
     by_throttle = grouped['throttle'].agg(np.mean).reset_index()
+    by_velocity = grouped['velocity'].agg(np.mean).reset_index().rename(columns={'velocity': 'mean_velocity'})
+    by_max_velocity = grouped['velocity'].agg(np.max).reset_index().rename(columns={'velocity': 'max_velocity'})
     by_time = grouped['timestamp'].agg(np.ptp).reset_index() \
         .rename(index=str, columns={"timestamp": "time"})
     by_time['time'] = by_time['time'].astype(float)
@@ -325,7 +346,7 @@ def simulation_agg(panda, firstgroup='iteration', add_timestamp=False, is_eval=F
         by_new_reward = grouped['new_reward'].agg(np.sum).reset_index()
         result = result.merge(by_new_reward, on=[firstgroup, 'episode'])
 
-    result = result.merge(by_throttle, on=[firstgroup, 'episode'])
+    result = result.merge(by_throttle, on=[firstgroup, 'episode']).merge(by_velocity, on=[firstgroup, 'episode']).merge(by_max_velocity, on=[firstgroup, 'episode'])
 
     if not is_eval:
         by_reward = grouped['reward'].agg(np.sum).reset_index()
